@@ -20,7 +20,7 @@ inline std::ostream& operator << (std::ostream& o, const std::vector<T>& mvect) 
 }
 
 inline std::ostream& operator << (std::ostream& o, const elem element) {
-    o << "t = " << element.t << " lat = " << element.lat << " lon = " << element.lon << " h = " << element.height
+    o << "t = " << element.t << " lat = " << element.lat << " lon = " << element.lon << " h = " << element.h
         << " vxg = " << element.vxg << " vyg = " << element.vyg << " vzg = " << element.vzg
         << " pitch = " << element.pitch << " roll = " << element.roll << " thdg = " << element.thdg;
     return o;
