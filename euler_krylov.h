@@ -22,7 +22,7 @@ struct elem
 
 struct imu
 {
-	double t, ax, ay, az, wx, wy, wz; // IDU
+	double t, ax, ay, az, wx, wy, wz; // IMU
 };
 
 
@@ -32,12 +32,12 @@ double deg2rad(double degrees)
 };
 
 // абсолютная угловая скорость 
-std::vector<double> count_wgs(double vxg, double vyg, double vzg, double h, double phi)
+std::vector<double> count_wgs(double vxg, double vzg, double phi_deg, double h)
 {
-	double phi_rad = deg2rad(phi), R = R_EARTH + h;
+	double phi = deg2rad(phi), R = R_EARTH + h;
 	// проекции вектора абсолютной угловой скорости (3.6)
-	double wxg = U_EARTH * std::cos(phi_rad) + vzg / R;
-	double wyg = U_EARTH * std::sin(phi_rad) + vzg / R * std::tan(phi);
+	double wxg = U_EARTH * std::cos(phi) + vzg / R;
+	double wyg = U_EARTH * std::sin(phi) + vzg / R * std::tan(phi);
 	double wzg = -vxg / R;
 	return std::vector<double> {wxg, wyg, wzg};
 }
@@ -69,14 +69,14 @@ std::vector<double> count_speeds(double t, double vxg, double vyg, double vzg, d
 // высота, широта, долгота (lat, lon, height)
 std::vector<double> count_cords(double t, double vxg, double vyg, double vzg, double phi0, double lambda0, double h0)
 {
-	// координаты местоположения (с учетом начальных значений) (3.18) 
+	// координаты местоположения (3.18) 
 	double dt = 0.02;
 	double h = h0 + vyg * dt;
 	double R = R_EARTH + h;
 	double phi = phi0 + vxg / R * dt;
 	double lambda = lambda0 + vzg / (R * std::cos(phi))  * dt;
 
-	return std::vector<double> {phi, lambda, h};
+	return std::vector<double> {lambda, phi, h};
 }
 
 // угол рыскания, тангаж, крен (pitch, roll, thdg)
@@ -96,7 +96,7 @@ std::vector<double> count_rot_angles(double t, double wx, double wy, double wz, 
 	double theta_der = wy_rel * std::sin(gamma) + wz_rel * std::cos(gamma);
 	double gamma_der = wx_rel - std::tan(theta) * (wy_rel * std::cos(gamma) - wz_rel * std::sin(gamma));
 	double dt = 0.02;
-	return std::vector<double> {psi_der * dt, theta_der * dt, gamma_der * dt};
+	return std::vector<double> {gamma_der * dt, psi_der * dt, theta_der * dt};
 }
 
 #endif
