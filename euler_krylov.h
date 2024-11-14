@@ -32,27 +32,25 @@ double deg2rad(double degrees)
 };
 
 // абсолютная угловая скорость 
-std::vector<double> count_wgs(double vxg, double vzg, double phi0, double h)
+std::vector<double> count_wgs(double vxg, double vzg, double phi_, double h)
 {
-	double phi = deg2rad(phi0), R = R_EARTH + h;
+	double R = R_EARTH + h, phi = deg2rad(phi_);
 	// проекции вектора абсолютной угловой скорости (3.6)
 	double wxg = U_EARTH * std::cos(phi) + vzg / R;
 	double wyg = U_EARTH * std::sin(phi) + vzg / R * std::tan(phi);
-	double wzg = -vxg / R;
+	double wzg = -vzg / R; 
 
 	return std::vector<double> {wxg, wyg, wzg};
 }
 
 // относительная скорость 
-std::vector<double> count_speeds(double dt, double vxg, double vyg, double vzg, double ax, double ay, double az, double phi0, double h)
+std::vector<double> count_speeds(double dt, double vxg, double vyg, double vzg, double nx, double ny, double nz, double phi_, double h)
 {
-	double R = R_EARTH + h, phi = deg2rad(phi0);
-	// проекции вектора кажещегося ускорения вершин трегранника на его оси (3.14)
-	double nx = ax, ny = ay, nz = az;
+	double R = R_EARTH + h, phi = deg2rad(phi_);
 
 	// компенсирующие составляющие ускорения (3.15)
-	double akx = std::pow(vzg, 2) * std::tan(phi) / R + vxg * vyg / R + 2 * U_EARTH * vzg * std::sin(phi);
-	double aky = -std::pow(vzg, 2) / R - std::pow(vxg, 2) / R - 2 * U_EARTH * vzg * std::cos(phi) + G_EARTH;
+	double akx = std::pow(vzg, 2) * std::tan(phi) / R + vzg * vyg / R + 2 * U_EARTH * vzg * std::sin(phi);
+	double aky = - vzg * vzg / R - vxg * vzg/ R - 2 * U_EARTH * vzg * std::cos(phi) + G_EARTH;
 	double akz = vzg * vyg / R - vxg * vzg * std::tan(phi) / R + 2 * (vyg * U_EARTH * std::cos(phi) - U_EARTH * vxg * std::sin(phi));
 	
 	// составляющие относительной скорости (3.17)
@@ -64,15 +62,15 @@ std::vector<double> count_speeds(double dt, double vxg, double vyg, double vzg, 
 }
 
 // высота, широта, долгота
-std::vector<double> count_cords(double dt, double vxg, double vyg, double vzg, double phi0, double lambda0, double h0)
+std::vector<double> count_cords(double dt, double vxg, double vyg, double vzg, double phi, double lambda, double h)
 {
 	// координаты местоположения (3.18) 
-	double h = h0 + vyg * dt;
-	double R = R_EARTH + h;
-	double phi = phi0 + vxg / R * dt;
-	double lambda = lambda0 + vzg / (R * std::cos(phi))  * dt;
+	double h_new = h + vyg * dt;
+	double R = R_EARTH + h_new;
+	double phi_new = phi + vxg / R * dt;
+	double lambda_new = lambda + vzg / (R * std::cos(deg2rad(phi)))  * dt;
 
-	return std::vector<double> {phi, lambda, h};
+	return std::vector<double> {phi_new, lambda_new, h_new};
 }
 
 std::vector<double> count_rot_angles(double dt, double wx, double wy, double wz, double wxg, double wyg, double wzg, double theta0, double gamma0, double psi0)
@@ -90,11 +88,11 @@ std::vector<double> count_rot_angles(double dt, double wx, double wy, double wz,
 	double theta_der = wy_rel * std::sin(gamma) + wz_rel * std::cos(gamma);
 	double gamma_der = wx_rel - std::tan(theta) * (wy_rel * std::cos(gamma) - wz_rel * std::sin(gamma));
 
-	double psi_ = psi0 + psi_der * dt;
-	double theta_ = theta0 + theta_der * dt;
-	double gamma_ = gamma0 + gamma_der * dt;
+	double psi_new = psi0 + psi_der * dt;
+	double theta_new = theta0 + theta_der * dt;
+	double gamma_new = gamma0 + gamma_der * dt;
 
-	return std::vector<double> {theta_, gamma_, psi_};
+	return std::vector<double> {theta_new, gamma_new, psi_new};
 }
 
 #endif

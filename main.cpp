@@ -49,17 +49,12 @@ int main()
 	}
 
 	for (int i = 0; i < imus.size(); i++) {
-		// std::vector<double> cords = count_cords(elements[i].t, elements[i].vxg, elements[i].vyg, elements[i].vzg, elements[i].lat, elements[i].lon, elements[i].h);
-		// std::vector<double> wgs = count_wgs(elements[i].vxg, elements[i].vzg, cords[1], cords[2]);
-		// std::vector<double> speeds = count_speeds(elements[i].t, elements[i].vxg, elements[i].vyg, elements[i].vzg, imus[i].ax, imus[i].ay, imus[i].az, cords[1], cords[2]);
-		// std::vector<double> rot_angles = count_rot_angles(elements[i].t, imus[i].wx, imus[i].wy, imus[i].wz, wgs[0], wgs[1], wgs[2], 360 - elements[i].thdg, elements[i].pitch, elements[0].roll);
-
 		std::vector<double> wgs = count_wgs(elements[i].vxg, elements[i].vzg, elements[i].lat, elements[i].h); // {wxg, wyg, wzg}
 		std::vector<double> speeds = count_speeds(dt, elements[i].vxg, elements[i].vyg, elements[i].vzg, imus[i].ax, imus[i].ay, imus[i].az, elements[i].lat, elements[i].h); //{vxg, vyg, vzg};
-		std::vector<double> cords = count_cords(dt, elements[i].vxg, elements[i].vyg, elements[i].vzg, elements[i].lon, elements[i].lat, elements[i].h); // {lat, lon, h}
-		std::vector<double> rot_angles = count_rot_angles(dt, imus[i].wx, imus[i].wy, imus[i].wz, wgs[0], wgs[1], wgs[2], elements[i].pitch, elements[i].roll, elements[i].thdg); //
+		std::vector<double> cords = count_cords(dt, speeds[0], speeds[1], speeds[2], elements[i].lat, elements[i].lon, elements[i].h); // {lat, lon, h}
+		std::vector<double> rot_angles = count_rot_angles(dt, imus[i].wx, imus[i].wy, imus[i].wz, wgs[0], wgs[1], wgs[2], elements[i].pitch, elements[i].roll, elements[i].thdg); // {pitch, roll, thdg}
 		elements.push_back(elem{ imus[i].t, cords[0], cords[1], cords[2], speeds[0], speeds[1], speeds[2], rot_angles[0], rot_angles[1], 360 - rot_angles[2] }); 
-		if (i > 6794){
+		if (i > 6797){
 			std::cout << "File info       " << elements_check[i + 1] << "\n";
 			std::cout << "Calculated info " << elements[i + 1] << "\n";
 		}
