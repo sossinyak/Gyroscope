@@ -13,7 +13,6 @@
 #define U_EARTH 7.2921158553 * std::pow(10, -5)
 #define G_EARTH 9.8
 
-
 struct elem
 {
 	double t, lat, lon, h, vxg, vyg, vzg, pitch, roll, thdg; // Nav
@@ -26,15 +25,20 @@ struct imu
 };
 
 
-double deg2rad(double degrees)
+std::vector<double> radians(double p, double r, double t, double l)
 {
-	return PI * degrees / 180;
+	return  std::vector<double> {PI * p / 180, PI * r / 180, PI * t / 180, PI * l / 180}; 
 };
 
-// абсолютная угловая скорость 
-std::vector<double> count_wgs(double vxg, double vzg, double phi_, double h)
+double degrees(double radians)
 {
-	double R = R_EARTH + h, phi = deg2rad(phi_);
+	return 180 * radians / PI;
+}
+
+// абсолютная угловая скорость 
+std::vector<double> count_wgs(double vxg, double vzg, double phi, double h)
+{
+	double R = R_EARTH + h;
 	// проекции вектора абсолютной угловой скорости (3.6)
 	double wxg = U_EARTH * std::cos(phi) + vzg / R;
 	double wyg = U_EARTH * std::sin(phi) + vzg / R * std::tan(phi);
@@ -43,9 +47,8 @@ std::vector<double> count_wgs(double vxg, double vzg, double phi_, double h)
 	return std::vector<double> {wxg, wyg, wzg};
 }
 
-std::vector<double> count_rot_angles(double dt, double wx, double wy, double wz, double wxg, double wyg, double wzg, double theta0, double gamma0, double psi0)
+std::vector<double> count_rot_angles(double dt, double wx, double wy, double wz, double wxg, double wyg, double wzg, double theta, double gamma, double psi)
 {
-	double gamma = deg2rad(gamma0), psi = deg2rad(psi0), theta = deg2rad(theta0);
 	// проекция вектора угловой скорости относительно географической системы координат (3.24)
 	double wx_rel = wx - (wxg * std::cos(theta) * std::cos(psi) + wyg * std::sin(theta) - wzg * std::cos(theta) * std::sin(psi));
 	double wy_rel = wy - (wxg * (-std::cos(gamma) * std::cos(psi) * std::sin(theta) + std::sin(gamma) * std::sin(psi)) + 
@@ -58,18 +61,18 @@ std::vector<double> count_rot_angles(double dt, double wx, double wy, double wz,
 	double theta_der = wy_rel * std::sin(gamma) + wz_rel * std::cos(gamma);
 	double gamma_der = wx_rel - std::tan(theta) * (wy_rel * std::cos(gamma) - wz_rel * std::sin(gamma));
 
-	double psi_new = psi0 + psi_der * dt;
-	double theta_new = theta0 + theta_der * dt;
-	double gamma_new = gamma0 + gamma_der * dt;
+	double psi_new = degrees(psi) + psi_der * dt;
+	double theta_new = degrees(theta) + theta_der * dt;
+	double gamma_new = degrees(gamma) + gamma_der * dt;
 
 	return std::vector<double> {theta_new, gamma_new, psi_new};
 }
 
 // относительная скорость 
-std::vector<double> count_speeds(double dt, double vxg, double vyg, double vzg, double ax, double ay, double az, double phi_, double h, double theta, double gamma, double psi)
+std::vector<double> count_speeds(double dt, double vxg, double vyg, double vzg, double ax, double ay, double az, double phi, double h, double theta, double gamma, double psi)
 {
-	double R = R_EARTH + h, phi = deg2rad(phi_);
-	
+	double R = R_EARTH + h;
+
 	double nx = ax * std::cos(theta) * std::cos(psi) + ay * (-std::cos(gamma) * std::cos(psi) * std::sin(theta) + std::sin(gamma) * std::sin(psi)) 
 	            + az * (std::sin(gamma) * std::cos(psi) * std::sin(theta) + std::cos(gamma) * std::sin(psi));
 	double ny = ax * std::sin(theta) + ay * std::cos(gamma) * std::cos(theta) - az * std::sin(gamma) * std::cos(theta); 
@@ -96,8 +99,7 @@ std::vector<double> count_cords(double dt, double vxg, double vyg, double vzg, d
 	double h_new = h + vyg * dt;
 	double R = R_EARTH + h_new;
 	double phi_new = phi + vxg / R * dt;
-	double lambda_new = lambda + vzg / (R * std::cos(deg2rad(phi)))  * dt;
-
+	double lambda_new = lambda + vzg / (R * std::cos(phi))  * dt;
 	return std::vector<double> {phi_new, lambda_new, h_new};
 }
 
