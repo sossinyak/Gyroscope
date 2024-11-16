@@ -43,10 +43,38 @@ std::vector<double> count_wgs(double vxg, double vzg, double phi_, double h)
 	return std::vector<double> {wxg, wyg, wzg};
 }
 
+std::vector<double> count_rot_angles(double dt, double wx, double wy, double wz, double wxg, double wyg, double wzg, double theta0, double gamma0, double psi0)
+{
+	double gamma = deg2rad(gamma0), psi = deg2rad(psi0), theta = deg2rad(theta0);
+	// проекция вектора угловой скорости относительно географической системы координат (3.24)
+	double wx_rel = wx - (wxg * std::cos(theta) * std::cos(psi) + wyg * std::sin(theta) - wzg * std::cos(theta) * std::sin(psi));
+	double wy_rel = wy - (wxg * (-std::cos(gamma) * std::cos(psi) * std::sin(theta) + std::sin(gamma) * std::sin(psi)) + 
+		wyg * std::cos(gamma) * std::cos(theta) + wzg * (std::cos(gamma) * std::sin(psi) * std::sin(theta) + std::sin(gamma) * std::cos(psi)));
+	double wz_rel = wz - (wxg * (std::sin(gamma) * std::cos(psi) * std::sin(theta) - std::cos(gamma) * std::sin(psi)) - 
+		wyg * std::sin(gamma) * std::cos(theta) + wzg * (-std::sin(gamma) * std::sin(psi) * std::sin(theta) + std::cos(gamma) * std::cos(psi)));
+
+	// кинематические уравнения в углах Эйлера-Крылова (3.30)
+	double psi_der = 1 / std::cos(theta) * (wy_rel * std::cos(gamma) - wz_rel * std::sin(gamma));
+	double theta_der = wy_rel * std::sin(gamma) + wz_rel * std::cos(gamma);
+	double gamma_der = wx_rel - std::tan(theta) * (wy_rel * std::cos(gamma) - wz_rel * std::sin(gamma));
+
+	double psi_new = psi0 + psi_der * dt;
+	double theta_new = theta0 + theta_der * dt;
+	double gamma_new = gamma0 + gamma_der * dt;
+
+	return std::vector<double> {theta_new, gamma_new, psi_new};
+}
+
 // относительная скорость 
-std::vector<double> count_speeds(double dt, double vxg, double vyg, double vzg, double nx, double ny, double nz, double phi_, double h)
+std::vector<double> count_speeds(double dt, double vxg, double vyg, double vzg, double ax, double ay, double az, double phi_, double h, double theta, double gamma, double psi)
 {
 	double R = R_EARTH + h, phi = deg2rad(phi_);
+	
+	double nx = ax * std::cos(theta) * std::cos(psi) + ay * (-std::cos(gamma) * std::cos(psi) * std::sin(theta) + std::sin(gamma) * std::sin(psi)) 
+	            + az * (std::sin(gamma) * std::cos(psi) * std::sin(theta) + std::cos(gamma) * std::sin(psi));
+	double ny = ax * std::sin(theta) + ay * std::cos(gamma) * std::cos(theta) - az * std::sin(gamma) * std::cos(theta); 
+	double nz = - ax * std::cos(theta) * std::sin(psi) + ay * (std::cos(gamma) * std::sin(psi) * std::sin(theta) + std::sin(gamma) * std::cos(psi)) 
+	             + az * (-std::sin(gamma) * std::sin(psi) * std::sin(theta) + std::cos(gamma) * std::cos(psi));
 
 	// компенсирующие составляющие ускорения (3.15)
 	double akx = std::pow(vzg, 2) * std::tan(phi) / R + vzg * vyg / R + 2 * U_EARTH * vzg * std::sin(phi);
@@ -71,28 +99,6 @@ std::vector<double> count_cords(double dt, double vxg, double vyg, double vzg, d
 	double lambda_new = lambda + vzg / (R * std::cos(deg2rad(phi)))  * dt;
 
 	return std::vector<double> {phi_new, lambda_new, h_new};
-}
-
-std::vector<double> count_rot_angles(double dt, double wx, double wy, double wz, double wxg, double wyg, double wzg, double theta0, double gamma0, double psi0)
-{
-	double gamma = deg2rad(gamma0), psi = deg2rad(psi0), theta = deg2rad(theta0);
-	// проекция вектора угловой скорости относительно географической системы координат (3.24)
-	double wx_rel = wx - (wxg * std::cos(theta) * std::cos(psi) + wyg * std::sin(theta) - wzg * std::cos(theta) * std::sin(psi));
-	double wy_rel = wy - (wxg * (-std::cos(gamma) * std::cos(psi) * std::sin(theta) + std::sin(gamma) * std::sin(psi)) + 
-		wyg * std::cos(gamma) * std::cos(theta) + wzg * (std::cos(gamma) * std::sin(psi) * std::sin(theta) + std::sin(gamma) * std::cos(psi)));
-	double wz_rel = wz - (wxg * std::sin(gamma) * std::cos(psi) * std::sin(theta) - std::cos(gamma) * std::sin(psi) - 
-		wyg * std::sin(gamma) * std::cos(theta) + wzg * (-std::sin(gamma) * std::sin(psi) * std::sin(theta) + std::cos(gamma) * std::cos(psi)));
-
-	// кинематические уравнения в углах Эйлера-Крылова (3.30)
-	double psi_der = 1 / std::cos(theta) * (wy_rel * std::cos(gamma) - wz_rel * std::sin(gamma));
-	double theta_der = wy_rel * std::sin(gamma) + wz_rel * std::cos(gamma);
-	double gamma_der = wx_rel - std::tan(theta) * (wy_rel * std::cos(gamma) - wz_rel * std::sin(gamma));
-
-	double psi_new = psi0 + psi_der * dt;
-	double theta_new = theta0 + theta_der * dt;
-	double gamma_new = gamma0 + gamma_der * dt;
-
-	return std::vector<double> {theta_new, gamma_new, psi_new};
 }
 
 #endif
