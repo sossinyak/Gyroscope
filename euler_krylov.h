@@ -27,8 +27,13 @@ struct imu
 
 std::vector<double> radians(double p, double r, double t, double l)
 {
-	return  std::vector<double> {PI * p / 180, PI * r / 180, PI * t / 180, PI * l / 180}; 
+	return std::vector<double> {PI * p / 180, PI * r / 180, PI * t / 180, PI * l / 180}; 
 };
+
+// double radians(double degrees)
+// {
+// 	return PI *  degrees / 180; 
+// };
 
 double degrees(double radians)
 {
@@ -69,7 +74,8 @@ std::vector<double> count_rot_angles(double dt, double wx, double wy, double wz,
 }
 
 // относительная скорость 
-std::vector<double> count_speeds(double dt, double vxg, double vyg, double vzg, double ax, double ay, double az, double phi, double h, double theta, double gamma, double psi)
+std::vector<double> count_speeds(double dt, double vxg, double vyg, double vzg, double ax, double ay, double az, 
+								double phi, double h, double theta, double gamma, double psi)
 {
 	double R = R_EARTH + h;
 
@@ -80,8 +86,8 @@ std::vector<double> count_speeds(double dt, double vxg, double vyg, double vzg, 
 	             + az * (-std::sin(gamma) * std::sin(psi) * std::sin(theta) + std::cos(gamma) * std::cos(psi));
 
 	// компенсирующие составляющие ускорения (3.15)
-	double akx = std::pow(vzg, 2) * std::tan(phi) / R + vzg * vyg / R + 2 * U_EARTH * vzg * std::sin(phi);
-	double aky = - vzg * vzg / R - vxg * vzg/ R - 2 * U_EARTH * vzg * std::cos(phi) + G_EARTH;
+	double akx = std::pow(vzg, 2) * std::tan(phi) / R + vxg * vyg / R + 2 * U_EARTH * vzg * std::sin(phi);
+	double aky = - std::pow(vzg, 2)  / R - std::pow(vxg, 2)/ R - 2 * U_EARTH * vzg * std::cos(phi) + G_EARTH;
 	double akz = vzg * vyg / R - vxg * vzg * std::tan(phi) / R + 2 * (vyg * U_EARTH * std::cos(phi) - U_EARTH * vxg * std::sin(phi));
 	
 	// составляющие относительной скорости (3.17)
